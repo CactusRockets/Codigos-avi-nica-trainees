@@ -4,12 +4,20 @@
 
 Adafruit_BMP280 bmp; //I2C
 
-#define PRESSAO_REFERENCIA 1013.25
-#define SIZE_BUFFER_ALTITUDE 100
+#define PRESSAO_REFERENCIA 1013.25 /* Pressão de referência para o BMP280 */
+#define SIZE_BUFFER_ALTITUDE 50 /* Tamanho da janela de amostragem de altitudes */
+#define REDUNDANCY 2     /* Quantidade de resultados seguidos iguais necessários para ativar o skib */
+#define SENSIBILITY 0.005 /* Valor de m mínimo necessário para perceber uma queda ou subida*/
+#define TIME_MEASUREMENT 10 /* Tempo para -cada- medida de altitude do buffer ser feita */
+#define TIME_TO_EXPLODE 300 /* Tempo após detectada a queda para a explosão do skib */
+#define ACTIVATION_INTERVAL 300 /* Tempo durante o qual o sinal de ativação ficará em ALTO */ 
+
+#define PINO_ACIONAMENTO 8 
 
 float altitudes[SIZE_BUFFER_ALTITUDE];
 float altitude_lida = 0;
 int index = 0;
+int counter_ativation = 0;
 
 typedef struct Reta{
   float m;
@@ -17,11 +25,14 @@ typedef struct Reta{
 };
 
 void setup() {
-  //Iniciando a comunicação serial
+  // Iniciando a comunicação serial
   Serial.begin(9600);
-  // Imprimindo Mensagem de teste no Monitor Serial
-  Serial.println(F("BMP280 teste"));
+  Serial.println(F("Aviônica Trainee"));
   
+  // Inicializando o Pino de acionamento
+  pinMode(PINO_ACIONAMENTO, OUTPUT);
+  digitalWrite(PINO_ACIONAMENTO, LOW);
+
   if (!bmp.begin(0x76)) { 
     Serial.println(F("Erro de Conexão com o BMP280"));
     while (1) delay(10);
@@ -29,18 +40,7 @@ void setup() {
 }
 
 void loop() {
-    /*
-    Serial.print(F("Altitude Aprox = "));
-    */
-
     altitude_lida = bmp.readAltitude(PRESSAO_REFERENCIA);
-    /*
-    Serial.print(altitude_lida); 
-    
-    Serial.println(" m");
-    Serial.print(index);
-    Serial.println();
-    */
 
     if (index < SIZE_BUFFER_ALTITUDE){
       altitudes[index] = altitude_lida;
@@ -50,18 +50,41 @@ void loop() {
       /*debugPrintAltitudes();*/
 
       Reta reta = leastSquaresAproximation();
-      /*
-      Serial.println(" Aproximação linear obtida: ");
-      Serial.print("y = ");
-      Serial.print(reta.m);
-      Serial.print("x + ");
-      Serial.println(reta.b);
-      */
+      
+      /*debugRetaGerada(reta.m, reta.b);*/
       debugQueda(reta.m);
+      redundancySystem(reta);
     }
 
+    delay(TIME_MEASUREMENT);
+}
 
-    delay(10);
+void redundancySystem(Reta r){
+  if (isFalling(r)){
+    counter_ativation++;
+    if (counter_ativation == REDUNDANCY){
+      activateSkib();
+    }
+  } else{
+    counter_ativation = 0;
+  }
+}
+
+void activateSkib(){
+  Serial.println("BOOOOOMMMM");
+
+  delay(TIME_TO_EXPLODE);
+  digitalWrite(PINO_ACIONAMENTO, HIGH);
+  delay(ACTIVATION_INTERVAL);
+  digitalWrite(PINO_ACIONAMENTO, LOW);
+}
+
+void debugRetaGerada(float m, float b){
+  Serial.println("Aproximação linear obtida: ");
+  Serial.print("y = ");
+  Serial.print(m);
+  Serial.print("x + ");
+  Serial.println(b);
 }
 
 void debugPrintAltitudes(){
@@ -74,15 +97,19 @@ void debugPrintAltitudes(){
 
 void debugQueda(float m){
   Serial.println(m);
-  if (m < -0.05){
+  if (m < -SENSIBILITY){
     Serial.println("Caindo");
   } 
-  else if (m > 0.05) {
+  else if (m > SENSIBILITY) {
     Serial.println("Subindo");
   }
   else {
     Serial.println("Estável");
   }
+}
+
+bool isFalling(Reta r){
+  return (r.m < -SENSIBILITY);
 }
 
 Reta leastSquaresAproximation(){
