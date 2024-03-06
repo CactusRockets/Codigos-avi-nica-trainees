@@ -5,13 +5,15 @@
 Adafruit_BMP280 bmp; //I2C
 
 #define PRESSAO_REFERENCIA 1013.25 /* Pressão de referência para o BMP280 */
-#define SIZE_BUFFER_ALTITUDE 50 /* Tamanho da janela de amostragem de altitudes */
-#define REDUNDANCY 2     /* Quantidade de resultados seguidos iguais necessários para ativar o skib */
-#define SENSIBILITY 0.005 /* Valor de m mínimo necessário para perceber uma queda ou subida*/
-#define TIME_MEASUREMENT 10 /* Tempo para -cada- medida de altitude do buffer ser feita */
+
+#define SIZE_BUFFER_ALTITUDE 10 /* Tamanho da janela de amostragem de altitudes */
+#define REDUNDANCY 3  /* Quantidade de resultados seguidos iguais necessários para ativar o skib */
+#define SENSIBILITY 0.03 /* Valor de m mínimo necessário para perceber uma queda ou subida*/
+#define TIME_MEASUREMENT 1 /* Tempo para -cada- medida de altitude do buffer ser feita */
+
 #define TIME_TO_EXPLODE 300 /* Tempo após detectada a queda para a explosão do skib */
 #define ACTIVATION_INTERVAL 300 /* Tempo durante o qual o sinal de ativação ficará em ALTO */ 
-
+cyh
 #define PINO_ACIONAMENTO 8 
 
 float altitudes[SIZE_BUFFER_ALTITUDE];
