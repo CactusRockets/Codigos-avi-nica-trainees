@@ -1,5 +1,3 @@
-/* CONFIGURAÇÕES BMP e MPU */
-
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_Sensor.h>
