@@ -8,7 +8,7 @@
 #define BMP_ADRESS 0x76
 #define MPU_ADRESS 0x68
 
-#define RANGE_ERROR_ALTITUDE 5
+#define RANGE_ERROR_ALTITUDE 10
 #define SKIB 5
 #define BUZZER 3
 
